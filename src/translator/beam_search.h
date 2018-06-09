@@ -94,11 +94,6 @@ public:
   }
 
   Histories search(Ptr<ExpressionGraph> graph, Ptr<data::CorpusBatch> batch) {
-	/*
-	 * @prashant comments
-	 * This looks like the primary search where the hypotheses for each sentence are created
-	 * The input is a whole batch and a word graph maybe??
-	 */
     int dimBatch = batch->size();
     Histories histories;
     for(int i = 0; i < dimBatch; ++i) {
