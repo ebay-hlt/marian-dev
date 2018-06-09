@@ -557,7 +557,6 @@ void ConfigParser::addOptionsTraining(po::options_description& desc) {
       ->zero_tokens()
       ->default_value(false),
      "Fix target embeddings. Affects all decoders")
-
     ("multi-node", po::value<bool>()
       ->zero_tokens()
       ->default_value(false),
@@ -565,6 +564,8 @@ void ConfigParser::addOptionsTraining(po::options_description& desc) {
     ("multi-node-overlap", po::value<bool>()
       ->default_value(true),
      "Overlap model computations with MPI communication")
+	("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
+	 "Use placeholders (ne tags with entity)")
   ;
   // clang-format on
   desc.add(training);
@@ -613,6 +614,8 @@ void ConfigParser::addOptionsValid(po::options_description& desc) {
       "Allow unknown words to appear in output")
     ("n-best", po::value<bool>()->zero_tokens()->default_value(false),
       "Generate n-best list")
+	("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
+	  "Use placeholders (ne tags with entity)")
   ;
   // clang-format on
   desc.add(valid);
@@ -660,6 +663,8 @@ void ConfigParser::addOptionsTranslate(po::options_description& desc) {
       "Sorting strategy for maxi-batch: none (default) src")
     ("n-best", po::value<bool>()->zero_tokens()->default_value(false),
       "Display n-best list")
+	("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
+	  "Use placeholders (ne tags with entity)")
     //("lexical-table", po::value<std::string>(),
     // "Path to lexical table")
     ("weights", po::value<std::vector<float>>()
@@ -973,6 +978,7 @@ void ConfigParser::parseOptions(int argc, char** argv, bool doValidate) {
   SET_OPTION("log-level", std::string);
   SET_OPTION("quiet", bool);
   SET_OPTION("quiet-translation", bool);
+  SET_OPTION("using-placeholders", bool);
   SET_OPTION_NONDEFAULT("log", std::string);
   SET_OPTION("seed", size_t);
   SET_OPTION("relative-paths", bool);
