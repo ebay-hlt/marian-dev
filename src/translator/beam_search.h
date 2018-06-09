@@ -4,6 +4,7 @@
 #include "marian.h"
 #include "translator/history.h"
 #include "translator/scorers.h"
+#include "../data/xmlInput.h"
 
 #include "translator/helpers.h"
 #include "translator/nth_element.h"
@@ -11,6 +12,9 @@
 namespace marian {
 
 class BeamSearch {
+
+class XMLInput;
+
 private:
   Ptr<Config> options_;
   std::vector<Ptr<Scorer>> scorers_;
@@ -90,11 +94,18 @@ public:
   }
 
   Histories search(Ptr<ExpressionGraph> graph, Ptr<data::CorpusBatch> batch) {
+	/*
+	 * @prashant comments
+	 * This looks like the primary search where the hypotheses for each sentence are created
+	 * The input is a whole batch and a word graph maybe??
+	 */
     int dimBatch = batch->size();
     Histories histories;
     for(int i = 0; i < dimBatch; ++i) {
       size_t sentId = batch->getSentenceIds()[i];
+      data::XMLInputPtr xmlPtr = batch->getXMLInput()[i];
       auto history = New<History>(sentId, options_->get<float>("normalize"));
+      history->setXMLInput(xmlPtr);
       histories.push_back(history);
     }
 
