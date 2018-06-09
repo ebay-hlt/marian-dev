@@ -3,11 +3,13 @@
 #include <vector>
 
 #include "common/definitions.h"
+#include "xmlInput.h"
 
 namespace marian {
 namespace data {
 
 class Batch {
+class XMLInput;
 public:
   virtual size_t size() const = 0;
   virtual size_t words() const { return 0; };
@@ -20,6 +22,7 @@ public:
 
   virtual void setGuidedAlignment(const std::vector<float>&) = 0;
   virtual void setDataWeights(const std::vector<float>&) = 0;
+  virtual void setXMLInput(const std::vector<XMLInputPtr>&) = 0;
 
 protected:
   std::vector<size_t> sentenceIds_;
