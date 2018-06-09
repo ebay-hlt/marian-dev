@@ -20,15 +20,16 @@ private:
   };
 
 public:
-  History(size_t lineNo, float alpha = 1.f);
+  History(size_t lineNo, float alpha = 1.f, float wp_ = 0.f);
 
   float LengthPenalty(size_t length) { return std::pow((float)length, alpha_); }
+  float WordPenalty(size_t length) { return wp_ * (float)length; }
 
   void Add(const Beam& beam, bool last = false) {
     if(beam.back()->GetPrevHyp() != nullptr) {
       for(size_t j = 0; j < beam.size(); ++j)
         if(beam[j]->GetWord() == 0 || last) {
-          float cost = beam[j]->GetCost() / LengthPenalty(history_.size());
+          float cost = (beam[j]->GetCost() - WordPenalty(history_.size())) / LengthPenalty(history_.size());
           topHyps_.push({history_.size(), j, cost});
           // std::cerr << "Add " << history_.size() << " " << j << " " << cost
           // << std::endl;
@@ -80,6 +81,7 @@ private:
   size_t lineNo_;
   data::XMLInputPtr plc_;
   float alpha_;
+  float wp_;
 };
 
 typedef std::vector<Ptr<History>> Histories;

@@ -39,8 +39,8 @@ private:
   void execute(Ptr<data::Batch> batch);
 
 public:
-  SyncGraphGroup(Ptr<Config> options)
-      : GraphGroup(options),
+  SyncGraphGroup(Ptr<Config> config)
+      : GraphGroup(config),
         devices_{options_->getDevices()},
         movingAvg_{options_->get<float>("exponential-smoothing") > 0},
         mvDecay_{options_->get<float>("exponential-smoothing")},
@@ -49,13 +49,18 @@ public:
       auto graph = New<ExpressionGraph>();
       graph->setDevice(device);
       graph->reserveWorkspaceMB(options_->get<size_t>("workspace"));
+      graph->getBackend()->setClip(options_->get<float>("clip-gemm"));
+
       graphs_.push_back(graph);
       shardOpt_.push_back(Optimizer(options_));
-      builders_.push_back(models::from_config(options_));
+      builders_.push_back(models::from_config(options_, models::usage::training));
     }
   }
 
-  void update(Ptr<data::Batch> batch) { execute(batch); }
+  void update(Ptr<data::Batch> batch) {
+    ABORT_IF(finalized_, "Training has already finished.");
+    execute(batch);
+  }
 
   void load() {
     if(!options_->get<bool>("no-reload")) {
@@ -88,13 +93,13 @@ public:
 
   void save(bool final = false) {
     if(final && scheduler_) {
-      if(movingAvg_)
+      if(movingAvg_ && paramsAvg_.size() > 0)
         for(auto graph : graphs_)
           fetchParams(graph->params()->vals(), paramsAvg_);
 
       scheduler_->validate(graphs_, true);
 
-      if(movingAvg_)
+      if(movingAvg_ && paramsAvg_.size() > 0)
         for(auto graph : graphs_)
           fetchParams(graph->params()->vals(), params_);
     }
@@ -111,7 +116,7 @@ public:
       }
     }
 
-    if(movingAvg_)
+    if(movingAvg_ && paramsAvg_.size() > 0)
       fetchParams(graphs_[idx]->params()->vals(), paramsAvg_);
 
     std::string name = options_->get<std::string>("model");
@@ -136,7 +141,7 @@ public:
         scheduler_->save(name);
     }
 
-    if(movingAvg_)
+    if(movingAvg_ && paramsAvg_.size() > 0)
       fetchParams(graphs_[idx]->params()->vals(), params_);
 
     size_t totalSize = graphs_[idx]->params()->vals()->size();
@@ -144,7 +149,11 @@ public:
   }
 
   Ptr<data::BatchStats> collectStats() {
-    return builders_[0]->collectStats(graphs_[0], devices_.size() * delay_);
+    return GraphGroup::collectStats(graphs_[0], builders_[0], devices_.size() * delay_);
+  }
+
+  virtual void finalize() {
+    finalized_ = true;
   }
 };
 }
