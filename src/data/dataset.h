@@ -95,6 +95,9 @@ public:
   void setDataWeights(const std::vector<float>&) {
     ABORT("Data weighting in DataBatch is not implemented");
   }
+  void setXMLInput(const std::vector<XMLInputPtr>&) {
+    ABORT("XML input parsing in DataBatch is not implemented");
+  }
 };
 
 class Dataset : public DatasetBase<Example, ExampleIterator, DataBatch> {

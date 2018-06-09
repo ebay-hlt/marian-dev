@@ -12,6 +12,7 @@
 
 #include "common/logging.h"
 #include "xmlInput.h"
+#include "common/utils.h"
 #include <cstring>
 
 namespace marian {
@@ -25,7 +26,7 @@ std::string ParseXmlTagAttribute(const std::string& tag,const std::string& attri
   contentsStart += tagOpen.size();
   size_t contentsEnd = tag.find_first_of('"',contentsStart+1);
   if (contentsEnd == std::string::npos) {
-	  LOG("Malformed XML attribute: {}", tag);
+	  LOG(info, "Malformed XML attribute: {}", tag);
     return "";
   }
   size_t possibleEnd;
@@ -107,7 +108,7 @@ std::vector<std::string> TokenizeXml(const std::string& str, const std::string& 
       rpos = str.find(rbrack, lpos+lbrackStr.length()-1);			// rpos = str.find_first_of(rbrack, lpos);
       // sanity check: there has to be closing ">"
       if (rpos == std::string::npos) {
-        LOG("ERROR: malformed XML: {} \n", str);
+        LOG(info, "ERROR: malformed XML: {} \n", str);
         return tokens;
       }
     } else { // no more tags found
@@ -139,7 +140,7 @@ std::vector<std::string> TokenizeXml(const std::string& str, const std::string& 
  */
 
 bool XMLInput::ProcessAndStripXMLTags(std::string &line,
-		std::vector< std::pair<size_t, std::string> > &placeholders) {
+		EntityMap &placeholders) {
   //parse XML markup in translation line
 
   const std::string& lbrackStr = "<";
@@ -182,17 +183,16 @@ bool XMLInput::ProcessAndStripXMLTags(std::string &line,
       // strip extra boundary spaces and "<" and ">"
       std::string tag = TrimXml(xmlToken, lbrackStr, rbrackStr);
       Trim(tag);
-      LOG("XML TAG IS: {}\n" , tag);
 
       if (tag.size() == 0) {
-        LOG("ERROR: empty tag name: {} \n" ,line);
+        LOG(debug, "ERROR: empty tag name: {} \n" ,line);
         return false;
       }
 
       // check if unary (e.g., "<wall/>")
       bool isUnary = ( tag[tag.size() - 1] == '/' );
       if (isUnary){
-	    LOG("Unary tags not supported yet {} \n", line);
+	    LOG(debug, "Unary tags not supported yet {} \n", line);
 	    return false;
       }
 
@@ -219,7 +219,6 @@ bool XMLInput::ProcessAndStripXMLTags(std::string &line,
         // put the tag on the tag stack
         OpenedTag openedTag = make_pair( tagName, make_pair( wordPos, tagContent ) );
         tagStack.push_back( openedTag );
-        LOG("XML TAG {} ( {} ) added to stack, now size {} \n", tagName, tagContent, tagStack.size());
       }
 
       // *** process completed tag ***
@@ -227,7 +226,6 @@ bool XMLInput::ProcessAndStripXMLTags(std::string &line,
       if (isClosed) {
         // pop last opened tag from stack;
         if (tagStack.size() == 0) {
-          LOG("ERROR: tag {} closed, but not opened : {}\n", tagName, line);
           return false;
         }
         OpenedTag openedTag = tagStack.back();
@@ -235,7 +233,6 @@ bool XMLInput::ProcessAndStripXMLTags(std::string &line,
 
         // tag names have to match
         if (openedTag.first != tagName) {
-          LOG("ERROR: tag {} closed by tag {} : {} \n", openedTag.first, tagName, line);
           return false;
         }
 
@@ -247,7 +244,6 @@ bool XMLInput::ProcessAndStripXMLTags(std::string &line,
         // name-entity placeholder
         if (tagName == "ne") {
           if (startPos != (endPos - 1)) {
-            LOG("ERROR: Placeholder must only span 1 word: {} \n", line);
             return false;
           }
           std::string entity = ParseXmlTagAttribute(tagContent,"entity");
@@ -257,7 +253,6 @@ bool XMLInput::ProcessAndStripXMLTags(std::string &line,
     }
   }
   if (tagStack.size() > 0) {
-    LOG("ERROR: some opened tags were never closed: {} , not using any xml information in this line\n", line);
     return false;
   }
 

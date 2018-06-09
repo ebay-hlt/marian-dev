@@ -18,8 +18,8 @@ class XMLInput {
 
 private:
   typedef std::vector< std::pair<size_t, std::string> > EntityMap;
-  std::vector<EntityMap> placeholders_;
-
+  EntityMap placeholders_;
+	
 
 public:
 	XMLInput(std::string& line){
@@ -27,20 +27,23 @@ public:
 	   * parse this kind of a xmlInput
 	   * <ne translation="$num" entity="100">$num</ne>
 	   */
-	  std::vector< std::pair<size_t, std::string> > plc;
+	  EntityMap plc;
 	  bool parsed = ProcessAndStripXMLTags(line, plc);
 	  if (parsed)
 		placeholders_ = plc;
 	}
 
-	void ~XMLInput() {
+	~XMLInput() {
 		placeholders_.erase(placeholders_.begin(), placeholders_.end());
 	}
 
-	bool ProcessAndStripXMLTags(std::string &line, std::vector< std::pair<size_t, std::string> > &placeholders);
+	bool ProcessAndStripXMLTags(std::string &line, EntityMap& placeholders);
+	const EntityMap getEntites() const { return placeholders_; }
 	auto begin() const -> decltype(placeholders_.begin()) { return placeholders_.begin(); }
 	auto end() const -> decltype(placeholders_.end()) { return placeholders_.end(); }
+
 };
+typedef std::shared_ptr<XMLInput> XMLInputPtr;
 
 } /* namespace data */
 } /* namespace marian */

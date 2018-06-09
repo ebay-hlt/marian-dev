@@ -98,6 +98,8 @@ public:
       addAlignmentsToBatch(batch, batchVector);
     if(options_->has("data-weighting") && weightFileIdx_)
       addWeightsToBatch(batch, batchVector);
+    if(options_->has("using-placeholders"))
+      addXMLInputToBatch(batch, batchVector);
 
     return batch;
   }
