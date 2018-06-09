@@ -10,6 +10,7 @@ add_library(marian STATIC
   common/config.cpp
   common/config_parser.cpp
 
+  data/xmlInput.cpp
   data/vocab.cpp
   data/corpus_base.cpp
   data/corpus.cpp
@@ -48,6 +49,7 @@ add_library(marian STATIC
   translator/nth_element.cpp
   translator/helpers.cpp
   translator/scorers.cpp
+  translator/printer.h
 
   training/graph_group_async.cpp
   training/graph_group_async_drop.cpp
