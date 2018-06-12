@@ -28,6 +28,9 @@ add_library(marian STATIC
   tensors/cpu/prod.cpp
   tensors/cpu/tensor_operators.cpp
 
+  tensors/cpu/sharp/avx_gemm.cpp
+  tensors/cpu/sharp/sse_gemm.cpp
+
   graph/expression_graph.cpp
   graph/expression_operators.cpp
   graph/node.cpp
@@ -43,6 +46,7 @@ add_library(marian STATIC
   optimizers/optimizers.cpp
 
   models/model_factory.cpp
+  models/encoder_decoder.cpp
 
   translator/history.cpp
   translator/output_collector.cpp
@@ -73,8 +77,8 @@ cuda_add_library(marian_cuda
   tensors/gpu/cudnn_wrappers.cu
   translator/nth_element.cu
   translator/helpers.cu
-  training/dropper.cu
-  training/sparse_tensor.cu
+  training/gradient_dropping/gpu/dropper.cu
+  training/gradient_dropping/gpu/sparse_algorithm.cu
   STATIC)
 endif(CUDA_FOUND)
 
@@ -95,6 +99,33 @@ set_target_properties(marian_vocab PROPERTIES OUTPUT_NAME marian-vocab)
 
 set(EXECUTABLES ${EXECUTABLES} marian_train marian_decoder marian_scorer marian_vocab)
 
+# marian.zip and marian.tgz
+# This combines marian, marian_decoder in a single ZIP or TAR file for execution in MSFT internal tools FLO and Philly.
+# For Philly submission, we need statically-linked versions to deal with library dependencies, so this target is only enabled for static builds.
+if(USE_STATIC_LIBS)
+  add_custom_command(
+    OUTPUT "${CMAKE_BINARY_DIR}/marian.zip"
+    COMMAND zip -v -0 -j "${CMAKE_BINARY_DIR}/marian.zip"
+                "${CMAKE_BINARY_DIR}/marian"
+                "${CMAKE_BINARY_DIR}/marian-decoder" 
+                "${CMAKE_BINARY_DIR}/marian-scorer"
+                "${CMAKE_BINARY_DIR}/marian-vocab"
+    DEPENDS marian_train marian_decoder marian_scorer marian_vocab)
+  add_custom_target(marian_zip DEPENDS "${CMAKE_BINARY_DIR}/marian.zip")
+
+  add_custom_command(
+    OUTPUT "${CMAKE_BINARY_DIR}/marian.tgz"
+    COMMAND tar -cvvzf "${CMAKE_BINARY_DIR}/marian.tgz" -C "${CMAKE_BINARY_DIR}"
+                "marian"
+                "marian-decoder"
+                "marian-scorer"
+                "marian-vocab"
+    DEPENDS marian_train marian_decoder marian_scorer marian_vocab)
+  add_custom_target(marian_tgz DEPENDS "${CMAKE_BINARY_DIR}/marian.tgz")
+
+  add_custom_target(philly DEPENDS marian_tgz marian_zip)
+endif()
+
 if(COMPILE_SERVER)
   add_executable(marian_server command/marian_server.cpp)
   set_target_properties(marian_server PROPERTIES OUTPUT_NAME marian-server)
@@ -102,7 +133,7 @@ if(COMPILE_SERVER)
 endif(COMPILE_SERVER)
 
 foreach(exec ${EXECUTABLES})
-  target_link_libraries(${exec} marian ${EXT_LIBS})
+  target_link_libraries(${exec} marian ${EXT_LIBS} ${EXT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
   if(CUDA_FOUND)
     target_link_libraries(${exec} marian marian_cuda ${EXT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
     cuda_add_cublas_to_target(${exec})
