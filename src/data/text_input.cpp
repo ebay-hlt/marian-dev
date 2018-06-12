@@ -40,6 +40,7 @@ SentenceTuple TextInput::next() {
     for(size_t i = 0; i < files_.size(); ++i) {
       std::string line;
       if(std::getline(*files_[i], line)) {
+    	addXMLInputToSentenceTuple(line, tup);
         Words words = (*vocabs_[i])(line);
         if(words.empty())
           words.push_back(0);
@@ -54,5 +55,17 @@ SentenceTuple TextInput::next() {
   }
   return SentenceTuple(0);
 }
+
+void TextInput::addXMLInputToBatch(Ptr<CorpusBatch> batch,
+                                   const std::vector<sample>& batchVector) {
+  int dimBatch = batch->size();
+
+  std::vector<XMLInputPtr> xmlInputPtr(dimBatch, NULL);
+  for(int b = 0; b < dimBatch; ++b) {
+      xmlInputPtr[b] = batchVector[b].getXMLInputPtr();
+  }
+  batch->setXMLInput(xmlInputPtr);
+}
+
 }
 }
