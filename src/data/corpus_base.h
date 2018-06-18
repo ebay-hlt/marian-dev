@@ -16,6 +16,7 @@
 #include "data/dataset.h"
 #include "data/rng_engine.h"
 #include "data/vocab.h"
+#include "data/xmlInput.h"
 
 namespace marian {
 namespace data {
@@ -34,6 +35,7 @@ private:
   std::vector<Words> tuple_;
   std::vector<float> weights_;
   WordAlignment alignment_;
+  XMLInputPtr xmlInput_;
 
 public:
   typedef Words value_type;
@@ -98,6 +100,10 @@ public:
 
   const WordAlignment& getAlignment() const { return alignment_; }
   void setAlignment(const WordAlignment& alignment) { alignment_ = alignment; }
+
+  const XMLInputPtr getXMLInputPtr() const { return xmlInput_; }
+  void setXMLInputPtr(const XMLInputPtr placeholderPtr) { xmlInput_ = placeholderPtr; }
+
 };
 
 /**
@@ -200,13 +206,14 @@ public:
 
 /**
  * @brief Batch of source and target sentences with additional information,
- * such as guided alignments and sentence or word-leve weighting.
+ * such as guided alignments and sentence or word-level weighting.
  */
 class CorpusBatch : public Batch {
 private:
   std::vector<Ptr<SubBatch>> batches_;
   std::vector<float> guidedAlignment_;
   std::vector<float> dataWeights_;
+  std::vector<XMLInputPtr> xmlInputPtr_;
 
 public:
   CorpusBatch(const std::vector<Ptr<SubBatch>>& batches) : batches_(batches) {}
@@ -299,7 +306,10 @@ public:
                                    0.f);
       batch->setGuidedAlignment(alignment);
     }
-
+	if (options->has("using-placeholders") && options) {
+	  std::vector<XMLInputPtr> xmlInputPtr(batchSize * lengths.back(), NULL);
+	  batch->setXMLInput(xmlInputPtr);
+	}
     if(options->has("data-weighting")) {
       int weightsSize = batchSize;
       if(options->get<std::string>("data-weighting-type") != "sentence")
@@ -348,6 +358,10 @@ public:
     ABORT_IF(
         !guidedAlignment_.empty(),
         "Guided alignment with synchronous SGD is temporarily not supported");
+    // @TODO: restore placeholders in split batches
+    ABORT_IF(
+        !xmlInputPtr_.empty(),
+		"Using placeholders with synchronous SGD is temporarily not supported");
 
     // restore data weights in split batches
     pos = 0;
@@ -386,6 +400,11 @@ public:
   std::vector<float>& getDataWeights() { return dataWeights_; }
   void setDataWeights(const std::vector<float>& weights) {
     dataWeights_ = weights;
+  }
+
+  std::vector<XMLInputPtr> getXMLInput() { return xmlInputPtr_; }
+  void setXMLInput(const std::vector<XMLInputPtr>& xmlInputPtr) {
+	  xmlInputPtr_ = xmlInputPtr;
   }
 
   /**
@@ -451,6 +470,7 @@ protected:
   size_t maxLength_{0};
   bool maxLengthCrop_{false};
   bool rightLeft_{false};
+  bool xmlInput_{false};
 
   /**
    * @brief Index of the file with weights in paths_ and files_; zero means no
@@ -472,6 +492,12 @@ protected:
                                size_t i,
                                SentenceTuple& tup) const;
   /**
+   * @brief Helper function parsing the placeholders and adding them
+   * to the sentence tuple.
+   */
+  void addXMLInputToSentenceTuple(std::string& line,
+                                 SentenceTuple& tup);
+  /**
    * @brief Helper function parsing a line with word alignments and adding them
    * to the sentence tuple.
    */
@@ -489,6 +515,8 @@ protected:
 
   void addWeightsToBatch(Ptr<CorpusBatch> batch,
                          const std::vector<sample>& batchVector);
+  void addXMLInputToBatch(Ptr<CorpusBatch> batch,
+                           const std::vector<sample>& batchVector);
 };
 
 class CorpusIterator

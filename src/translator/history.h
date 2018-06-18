@@ -3,10 +3,13 @@
 #include <queue>
 
 #include "hypothesis.h"
+#include "../data/xmlInput.h"
 
 namespace marian {
+class XMLInput;
 
 class History {
+
 private:
   struct HypothesisCoord {
     bool operator<(const HypothesisCoord& hc) const { return cost < hc.cost; }
@@ -69,10 +72,14 @@ public:
 
   size_t GetLineNum() const { return lineNo_; }
 
+  void setXMLInput(data::XMLInputPtr xml) {plc_ = xml;}
+  const data::XMLInputPtr getXMLInput() const {return plc_;}
+
 private:
   std::vector<Beam> history_;
   std::priority_queue<HypothesisCoord> topHyps_;
   size_t lineNo_;
+  data::XMLInputPtr plc_;
   float alpha_;
   float wp_;
 };

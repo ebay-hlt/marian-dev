@@ -34,6 +34,7 @@ SentenceTuple Corpus::next() {
         } else if(i > 0 && i == weightFileIdx_) {
           addWeightsToSentenceTuple(line, tup);
         } else {
+          addXMLInputToSentenceTuple(line, tup);
           addWordsToSentenceTuple(line, i, tup);
         }
       }

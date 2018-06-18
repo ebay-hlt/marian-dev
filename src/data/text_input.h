@@ -54,6 +54,14 @@ public:
   iterator begin() { return iterator(*this); }
   iterator end() { return iterator(); }
 
+  void addXMLInputToBatch(Ptr<CorpusBatch> batch, const std::vector<sample>& batchVector);
+
+  void addXMLInputToSentenceTuple(std::string& line,
+		  SentenceTuple& tup) {
+	  XMLInputPtr placeHolders = std::make_shared<XMLInput>(line);
+	  tup.setXMLInputPtr(placeHolders);
+  }
+
   batch_ptr toBatch(const std::vector<sample>& batchVector) {
     int batchSize = batchVector.size();
 
@@ -91,7 +99,8 @@ public:
 
     auto batch = batch_ptr(new batch_type(subBatches));
     batch->setSentenceIds(sentenceIds);
-
+    if(options_->has("using-placeholders"))
+            addXMLInputToBatch(batch, batchVector);
     return batch;
   }
 

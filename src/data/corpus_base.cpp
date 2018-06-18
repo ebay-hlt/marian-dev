@@ -1,6 +1,7 @@
 #include <random>
 
 #include "data/corpus.h"
+#include "data/xmlInput.h"
 
 namespace marian {
 namespace data {
@@ -169,6 +170,7 @@ CorpusBase::CorpusBase(Ptr<Config> options, bool translate)
 void CorpusBase::addWordsToSentenceTuple(const std::string& line,
                                          size_t i,
                                          SentenceTuple& tup) const {
+  // convert tokens to indices
   Words words = (*vocabs_[i])(line);
 
   if(words.empty())
@@ -183,6 +185,12 @@ void CorpusBase::addWordsToSentenceTuple(const std::string& line,
     std::reverse(words.begin(), words.end() - 1);
 
   tup.push_back(words);
+}
+
+void CorpusBase::addXMLInputToSentenceTuple(std::string& line,
+											SentenceTuple& tup) {
+	XMLInputPtr placeHolders = std::make_shared<XMLInput>(line);
+	tup.setXMLInputPtr(placeHolders);
 }
 
 void CorpusBase::addAlignmentToSentenceTuple(const std::string& line,
@@ -257,5 +265,17 @@ void CorpusBase::addWeightsToBatch(Ptr<CorpusBatch> batch,
 
   batch->setDataWeights(weights);
 }
+
+void CorpusBase::addXMLInputToBatch(Ptr<CorpusBatch> batch,
+                                   const std::vector<sample>& batchVector) {
+  int dimBatch = batch->size();
+  std::vector<XMLInputPtr> xmlInputPtr(dimBatch, NULL);
+  for(int b = 0; b < dimBatch; ++b) {
+      xmlInputPtr[b] = batchVector[b].getXMLInputPtr();
+  }
+  batch->setXMLInput(xmlInputPtr);
+}
+
 }
 }
+
