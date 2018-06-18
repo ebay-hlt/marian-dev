@@ -576,12 +576,12 @@ void ConfigParser::addOptionsTraining(po::options_description& desc) {
     ("multi-node-overlap", po::value<bool>()
       ->default_value(true),
      "Overlap model computations with MPI communication")
-	("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
-	 "Use placeholders (ne tags with entity)")
     ("multi-node-local-optimizers", po::value<bool>()
       ->zero_tokens()
       ->default_value(false),
      "Enable local optimizers with multi-node. Requires optimizer delay to be turned on.")
+    ("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
+     "Use placeholders (ne tags with entity)")
   ;
   // clang-format on
   desc.add(training);
@@ -634,8 +634,8 @@ void ConfigParser::addOptionsValid(po::options_description& desc) {
       "Allow unknown words to appear in output")
     ("n-best", po::value<bool>()->zero_tokens()->default_value(false),
       "Generate n-best list")
-	("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
-	  "Use placeholders (ne tags with entity)")
+    ("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
+      "Use placeholders (ne tags with entity)")
   ;
   // clang-format on
   desc.add(valid);
@@ -693,8 +693,8 @@ void ConfigParser::addOptionsTranslate(po::options_description& desc) {
       "Sorting strategy for maxi-batch: none (default) src")
     ("n-best", po::value<bool>()->zero_tokens()->default_value(false),
       "Display n-best list")
-	("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
-	  "Use placeholders (ne tags with entity)")
+    ("using-placeholders", po::value<bool>()->zero_tokens()->default_value(false),
+      "Use placeholders (ne tags with entity)")
     //("lexical-table", po::value<std::string>(),
     // "Path to lexical table")
     ("shortlist", po::value<std::vector<std::string>>()->multitoken(),
@@ -976,7 +976,6 @@ void ConfigParser::parseOptions(int argc, char** argv, bool doValidate) {
 
     SET_OPTION("multi-node", bool);
     SET_OPTION("multi-node-overlap", bool);
-    SET_OPTION("multi-node-local-optimizers", bool);
   }
 
   if(mode_ == ConfigMode::rescoring) {
